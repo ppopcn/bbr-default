@@ -10,7 +10,6 @@ export PATH
 cur_dir=`pwd`
 
 libreswan_filename="libreswan-3.20"
-download_root_url="http://dl.teddysun.com/files"
 
 rootness(){
     if [[ $EUID -ne 0 ]]; then
@@ -138,6 +137,8 @@ is_64bit(){
 }
 
 download_file(){
+    local download_root_url="http://dl.teddysun.com/files"
+
     if [ -s ${1} ]; then
         echo "$1 [found]"
     else
@@ -227,7 +228,7 @@ preinstall_l2tp(){
     [ -z ${iprange} ] && iprange="192.168.18"
 
     echo "Please enter PSK:"
-    read -p "(Default PSK: ppopcn):" mypsk
+    read -p "(Default PSK: ppopcn:" mypsk
     [ -z ${mypsk} ] && mypsk="ppopcn"
 
     echo "Please enter Username:"
@@ -307,10 +308,8 @@ install_l2tp(){
         compile_install
     elif check_sys packageManager yum; then
         echo "Adding the EPEL repository..."
-        yum -y install epel-release yum-utils
+        yum -y install epel-release
         [ ! -f /etc/yum.repos.d/epel.repo ] && echo "Install EPEL repository failed, please check it." && exit 1
-        yum-config-manager --enable epel
-        echo "Adding the EPEL repository complete..."
 
         if centosversion 7; then
             yum -y install ppp libreswan xl2tpd firewalld
@@ -466,14 +465,12 @@ COMMIT
 :PREROUTING ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
--A POSTROUTING -s ${iprange}.0/24 -j SNAT --to-source ${IP}
 COMMIT
 EOF
         else
             iptables -I INPUT -p udp -m multiport --dports 500,4500,1701 -j ACCEPT
             iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
             iptables -I FORWARD -s ${iprange}.0/24  -j ACCEPT
-            iptables -t nat -A POSTROUTING -s ${iprange}.0/24 -j SNAT --to-source ${IP}
             /etc/init.d/iptables save
         fi
 
@@ -516,14 +513,12 @@ COMMIT
 :PREROUTING ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
--A POSTROUTING -s ${iprange}.0/24 -j SNAT --to-source ${IP}
 COMMIT
 EOF
         else
             iptables -I INPUT -p udp -m multiport --dports 500,4500,1701 -j ACCEPT
             iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
             iptables -I FORWARD -s ${iprange}.0/24  -j ACCEPT
-            iptables -t nat -A POSTROUTING -s ${iprange}.0/24 -j SNAT --to-source ${IP}
             /sbin/iptables-save > /etc/iptables.rules
         fi
 
